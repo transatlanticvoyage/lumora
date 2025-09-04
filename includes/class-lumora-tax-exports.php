@@ -1,5 +1,5 @@
 <?php
-// 
+// TEST COMMENT - Verifying dual git tracking for Lumora
 
 /**
  * Lumora Tax Exports Class

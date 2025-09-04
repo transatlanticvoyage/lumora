@@ -1,4 +1,5 @@
 <?php
+// TEST COMMENT - Verifying dual git tracking for Lumora
 /**
  * Plugin Name: Lumora
  * Plugin URI: https://github.com/transatlanticvoyage/lumora

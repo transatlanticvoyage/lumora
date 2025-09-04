@@ -14,6 +14,11 @@ class Lumora_Admin {
         add_action('wp_ajax_lumora_driggs_save_all', array($this, 'lumora_driggs_save_all'));
         add_action('wp_ajax_lumora_driggs_reset', array($this, 'lumora_driggs_reset'));
         add_action('wp_ajax_lumora_update_site_settings', array($this, 'lumora_update_site_settings'));
+        
+        // BeamRay AJAX handlers
+        add_action('wp_ajax_lumora_beamray_create_new_post', array($this, 'lumora_beamray_create_new_post'));
+        add_action('wp_ajax_lumora_beamray_update_post_field', array($this, 'lumora_beamray_update_post_field'));
+        add_action('wp_ajax_lumora_beamray_update_meta_field', array($this, 'lumora_beamray_update_meta_field'));
     }
     
     /**
@@ -73,6 +78,15 @@ class Lumora_Admin {
             'manage_options',
             'lumora_services_mar',
             array($this, 'lumora_services_mar')
+        );
+        
+        add_submenu_page(
+            'lumorahub',
+            'Lumora BeamRay Table',
+            'Lumora BeamRay Table',
+            'manage_options',
+            'lum_beamray_mar',
+            array($this, 'lum_beamray_mar_page')
         );
     }
     
@@ -1335,5 +1349,110 @@ class Lumora_Admin {
         }
         
         wp_send_json_success('Site settings updated successfully');
+    }
+    
+    /**
+     * Lumora BeamRay Mar page - WordPress Posts & Pages Manager (exact clone)
+     */
+    public function lum_beamray_mar_page() {
+        // AGGRESSIVE NOTICE SUPPRESSION
+        $this->suppress_all_admin_notices();
+        
+        // Include the beamraymar handler
+        require_once LUMORA_PLUGIN_PATH . 'beamraymar-clone-from-snef/lum-beamray-handler.php';
+        
+        // Call the main function
+        lumora_beamray_page();
+    }
+    
+    /**
+     * AJAX: Create new post/page for BeamRay
+     */
+    public function lumora_beamray_create_new_post() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'lumora_beamray_nonce')) {
+            wp_send_json_error('Security check failed');
+            return;
+        }
+
+        if (!current_user_can('edit_posts')) {
+            wp_send_json_error('Insufficient permissions');
+            return;
+        }
+
+        $post_data = array(
+            'post_title' => sanitize_text_field($_POST['post_title']),
+            'post_content' => wp_kses_post($_POST['post_content']),
+            'post_status' => sanitize_text_field($_POST['post_status']),
+            'post_type' => sanitize_text_field($_POST['post_type']),
+            'post_name' => sanitize_text_field($_POST['post_name']),
+            'post_parent' => intval($_POST['post_parent'])
+        );
+
+        $post_id = wp_insert_post($post_data);
+        if ($post_id && !is_wp_error($post_id)) {
+            wp_send_json_success(array('message' => 'Post created successfully', 'post_id' => $post_id));
+        } else {
+            wp_send_json_error('Failed to create post');
+        }
+    }
+    
+    /**
+     * AJAX: Update post field for BeamRay
+     */
+    public function lumora_beamray_update_post_field() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'lumora_beamray_nonce')) {
+            wp_send_json_error('Security check failed');
+            return;
+        }
+
+        if (!current_user_can('edit_posts')) {
+            wp_send_json_error('Insufficient permissions');
+            return;
+        }
+
+        $post_id = intval($_POST['post_id']);
+        $field = sanitize_text_field($_POST['field']);
+        $value = sanitize_textarea_field($_POST['value']);
+
+        $update_data = array(
+            'ID' => $post_id,
+            $field => $value
+        );
+
+        $result = wp_update_post($update_data);
+        if ($result && !is_wp_error($result)) {
+            wp_send_json_success('Field updated successfully');
+        } else {
+            wp_send_json_error('Failed to update field');
+        }
+    }
+    
+    /**
+     * AJAX: Update meta field for BeamRay
+     */
+    public function lumora_beamray_update_meta_field() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'lumora_beamray_nonce')) {
+            wp_send_json_error('Security check failed');
+            return;
+        }
+
+        if (!current_user_can('edit_posts')) {
+            wp_send_json_error('Insufficient permissions');
+            return;
+        }
+
+        $post_id = intval($_POST['post_id']);
+        $meta_key = sanitize_text_field($_POST['meta_key']);
+        $meta_value = sanitize_textarea_field($_POST['meta_value']);
+
+        $result = update_post_meta($post_id, $meta_key, $meta_value);
+        if ($result !== false) {
+            wp_send_json_success('Meta field updated successfully');
+        } else {
+            wp_send_json_error('Failed to update meta field');
+        }
     }
 }

@@ -19,6 +19,12 @@ function lumora_beamray_page() {
     // AGGRESSIVE NOTICE SUPPRESSION
     lumora_suppress_all_admin_notices();
     
+    // Ensure post_status parameter is always present
+    if (!isset($_GET['post_status'])) {
+        wp_redirect(admin_url('admin.php?page=lum_beamray_mar&post_status=all'));
+        exit;
+    }
+    
     // Handle AJAX requests - they are now handled by the main admin class
     // if (isset($_POST['action']) && in_array($_POST['action'], ['create_new_post', 'update_post_field', 'create', 'edit'])) {
     //     lumora_handle_beamray_ajax();
@@ -589,8 +595,9 @@ function lumora_beamray_page() {
             }
             
             .beamraymar-filter-btn.active {
-                background-color: #0073aa;
-                color: white;
+                background: navy !important;
+                color: white !important;
+                border-color: navy !important;
             }
             
             .beamraymar-filter-btn:first-child {
@@ -903,8 +910,10 @@ function lumora_beamray_page() {
                     </div>
                     
                     <div class="beamraymar-filter-bar" id="beamraymar-post-status-filter">
-                        <a href="#" class="beamraymar-filter-btn" data-filter-type="post_status" data-filter-value="publish">Published</a>
-                        <a href="#" class="beamraymar-filter-btn" data-filter-type="post_status" data-filter-value="draft">Draft</a>
+                        <?php $current_status = isset($_GET['post_status']) ? sanitize_text_field($_GET['post_status']) : 'all'; ?>
+                        <a href="<?php echo admin_url('admin.php?page=lum_beamray_mar&post_status=all'); ?>" class="beamraymar-filter-btn <?php echo ($current_status === 'all') ? 'active' : ''; ?>" data-filter-type="post_status" data-filter-value="all">All</a>
+                        <a href="<?php echo admin_url('admin.php?page=lum_beamray_mar&post_status=publish'); ?>" class="beamraymar-filter-btn <?php echo ($current_status === 'publish') ? 'active' : ''; ?>" data-filter-type="post_status" data-filter-value="publish">Published</a>
+                        <a href="<?php echo admin_url('admin.php?page=lum_beamray_mar&post_status=draft'); ?>" class="beamraymar-filter-btn <?php echo ($current_status === 'draft') ? 'active' : ''; ?>" data-filter-type="post_status" data-filter-value="draft">Draft</a>
                     </div>
                 </div>
             </div>
@@ -1632,19 +1641,28 @@ function lumora_get_posts_and_pages_data() {
     $lumora_db = new Lumora_Database();
     $lumora_db->create_zen_tables();
     
+    // Get post_status parameter from URL
+    $post_status = isset($_GET['post_status']) ? sanitize_text_field($_GET['post_status']) : 'all';
+    
+    // Build WHERE clause based on post_status parameter
+    $where_clause = "p.post_type IN ('post', 'page')";
+    if ($post_status !== 'all') {
+        $where_clause .= $wpdb->prepare(" AND p.post_status = %s", $post_status);
+    }
+    
     // Start with a very simple query to test basic functionality
     $results = $wpdb->get_results(
         "SELECT p.ID, p.post_title, p.post_content, p.post_type, p.post_status, p.post_name, 
                 p.post_date, p.post_modified, p.post_author, p.post_parent, p.menu_order,
                 p.comment_status, p.ping_status
          FROM {$wpdb->prefix}posts p
-         WHERE p.post_type IN ('post', 'page')
+         WHERE {$where_clause}
          ORDER BY p.post_modified DESC",
         ARRAY_A
     );
     
     // Add debugging info
-    error_log('Lumora BeamRay: Retrieved ' . count($results) . ' posts/pages from basic query');
+    error_log('Lumora BeamRay: Retrieved ' . count($results) . ' posts/pages from basic query (post_status: ' . $post_status . ')');
     if ($wpdb->last_error) {
         error_log('Lumora BeamRay SQL Error: ' . $wpdb->last_error);
     }

@@ -1901,3 +1901,546 @@ function lumora_render_beamray_table_rows($posts_pages) {
         $count++;
     }
 }
+
+    // Continue inside the main lumora_beamray_page() function 
+    // This HTML structure was disconnected during our edits
+    ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Bottom Controls -->
+        <div class="beamraymar-bottom-controls">
+            <div class="beamraymar-controls-left">
+                <div class="beamraymar-info-text">
+                    <span id="beamraymar-results-info-bottom">1-<?php echo min(100, count($posts_pages)); ?> of <?php echo count($posts_pages); ?> posts/pages</span>
+                </div>
+                
+                <div class="beamraymar-pagination-controls">
+                    <div class="beamraymar-pagination-bar" id="beamraymar-per-page-bar-bottom">
+                        <a href="#" class="beamraymar-pagination-btn" data-per-page="10">10</a>
+                        <a href="#" class="beamraymar-pagination-btn" data-per-page="20">20</a>
+                        <a href="#" class="beamraymar-pagination-btn" data-per-page="50">50</a>
+                        <a href="#" class="beamraymar-pagination-btn active" data-per-page="100">100</a>
+                        <a href="#" class="beamraymar-pagination-btn" data-per-page="200">200</a>
+                        <a href="#" class="beamraymar-pagination-btn" data-per-page="500">500</a>
+                        <a href="#" class="beamraymar-pagination-btn" data-per-page="all">All</a>
+                    </div>
+                    
+                    <div class="beamraymar-pagination-divider"></div>
+                    
+                    <div class="beamraymar-pagination-bar" id="beamraymar-page-bar-bottom">
+                        <a href="#" class="beamraymar-pagination-btn" data-page="first">First</a>
+                        <a href="#" class="beamraymar-pagination-btn" data-page="prev">Prev</a>
+                        <a href="#" class="beamraymar-pagination-btn active" data-page="1">1</a>
+                        <a href="#" class="beamraymar-pagination-btn" data-page="next">Next</a>
+                        <a href="#" class="beamraymar-pagination-btn" data-page="last">Last</a>
+                    </div>
+                </div>
+                
+                <div class="beamraymar-search-container">
+                    <input type="text" id="beamraymar-search-bottom" class="beamraymar-search-input" placeholder="Search all fields...">
+                    <button class="beamraymar-clear-btn" id="beamraymar-clear-bottom">CL</button>
+                </div>
+            </div>
+            <div></div>
+        </div>
+        
+        <!-- Modals -->
+        <!-- Create/Edit Modal -->
+        <div id="beamraymar-modal" class="beamraymar-modal">
+            <div class="beamraymar-modal-content">
+                <div class="beamraymar-modal-header">
+                    <h2 class="beamraymar-modal-title" id="beamraymar-modal-title">Create New Post/Page</h2>
+                    <button class="beamraymar-modal-close" id="beamraymar-modal-close">&times;</button>
+                </div>
+                
+                <form id="beamraymar-modal-form">
+                    <input type="hidden" id="modal-post-id" name="post_id">
+                    <input type="hidden" id="modal-action" name="action" value="create">
+                    <?php wp_nonce_field('lumora_beamray_nonce', 'nonce'); ?>
+                    
+                    <div class="beamraymar-form-grid">
+                        <div class="beamraymar-form-field">
+                            <label class="beamraymar-form-label">Post Type</label>
+                            <select id="modal-post-type" name="post_type" class="beamraymar-form-select">
+                                <option value="post">Post</option>
+                                <option value="page">Page</option>
+                            </select>
+                        </div>
+                        
+                        <div class="beamraymar-form-field">
+                            <label class="beamraymar-form-label">Status</label>
+                            <select id="modal-post-status" name="post_status" class="beamraymar-form-select">
+                                <option value="draft">Draft</option>
+                                <option value="publish">Published</option>
+                                <option value="private">Private</option>
+                            </select>
+                        </div>
+                        
+                        <div class="beamraymar-form-field full-width">
+                            <label class="beamraymar-form-label">Title</label>
+                            <input type="text" id="modal-post-title" name="post_title" class="beamraymar-form-input">
+                        </div>
+                        
+                        <div class="beamraymar-form-field full-width">
+                            <label class="beamraymar-form-label">Content</label>
+                            <textarea id="modal-post-content" name="post_content" class="beamraymar-form-textarea"></textarea>
+                        </div>
+                        
+                        <div class="beamraymar-form-field">
+                            <label class="beamraymar-form-label">Slug</label>
+                            <input type="text" id="modal-post-name" name="post_name" class="beamraymar-form-input">
+                        </div>
+                        
+                        <div class="beamraymar-form-field">
+                            <label class="beamraymar-form-label">Parent ID</label>
+                            <input type="number" id="modal-post-parent" name="post_parent" class="beamraymar-form-input" value="0">
+                        </div>
+                    </div>
+                    
+                    <div class="beamraymar-modal-actions">
+                        <button type="button" class="beamraymar-modal-btn secondary" id="beamraymar-modal-cancel">Cancel</button>
+                        <button type="submit" class="beamraymar-modal-btn primary" id="beamraymar-modal-save">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Post Content Editor Modal -->
+        <div id="beamraymar-content-editor-modal" class="beamraymar-content-editor-modal">
+            <div class="beamraymar-content-editor-content">
+                <div class="beamraymar-content-editor-header">post_content</div>
+                <textarea id="beamraymar-content-editor-textarea" class="beamraymar-content-editor-textarea"></textarea>
+                <div class="beamraymar-content-editor-actions">
+                    <button type="button" class="beamraymar-content-editor-btn cancel" id="beamraymar-content-editor-cancel">Cancel</button>
+                    <button type="button" class="beamraymar-content-editor-btn save" id="beamraymar-content-editor-save">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Elementor Data Editor Modal -->
+        <div id="beamraymar-elementor-editor-modal" class="beamraymar-content-editor-modal">
+            <div class="beamraymar-content-editor-content">
+                <div class="beamraymar-content-editor-header">_elementor_data</div>
+                <textarea id="beamraymar-elementor-editor-textarea" class="beamraymar-content-editor-textarea"></textarea>
+                <div class="beamraymar-content-editor-actions">
+                    <button type="button" class="beamraymar-content-editor-btn cancel" id="beamraymar-elementor-editor-cancel">Cancel</button>
+                    <button type="button" class="beamraymar-content-editor-btn save" id="beamraymar-elementor-editor-save">Save</button>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            // Lumora BeamRay JavaScript functionality - Exact clone with adapted endpoints
+            (function($) {
+                'use strict';
+                
+                let currentPage = 1;
+                let itemsPerPage = 100;
+                let currentSearch = '';
+                let allData = <?php echo json_encode($posts_pages); ?>;
+                let filteredData = [...allData];
+                let selectedRows = new Set();
+                let editingCell = null;
+                let currentContentEditPostId = null;
+                let currentElementorEditPostId = null;
+                
+                // Initialize page
+                $(document).ready(function() {
+                    initializeLumoraBeamray();
+                });
+                
+                function initializeLumoraBeamray() {
+                    bindEventHandlers();
+                    renderTable();
+                    updatePaginationInfo();
+                }
+                
+                function bindEventHandlers() {
+                    // Pagination buttons
+                    $(document).on('click', '.beamraymar-pagination-btn', function(e) {
+                        e.preventDefault();
+                        const $this = $(this);
+                        
+                        // Handle per-page buttons
+                        if ($this.data('per-page')) {
+                            itemsPerPage = $this.data('per-page') === 'all' ? filteredData.length : parseInt($this.data('per-page'));
+                            currentPage = 1;
+                            $('.beamraymar-pagination-btn[data-per-page]').removeClass('active');
+                            $this.addClass('active');
+                            renderTable();
+                            updatePaginationInfo();
+                        }
+                        
+                        // Handle page navigation
+                        if ($this.data('page')) {
+                            const pageAction = $this.data('page');
+                            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+                            
+                            switch(pageAction) {
+                                case 'first':
+                                    currentPage = 1;
+                                    break;
+                                case 'prev':
+                                    currentPage = Math.max(1, currentPage - 1);
+                                    break;
+                                case 'next':
+                                    currentPage = Math.min(totalPages, currentPage + 1);
+                                    break;
+                                case 'last':
+                                    currentPage = totalPages;
+                                    break;
+                                default:
+                                    currentPage = parseInt(pageAction);
+                            }
+                            renderTable();
+                            updatePaginationInfo();
+                        }
+                    });
+                    
+                    // Search functionality
+                    $(document).on('input', '.beamraymar-search-input', function() {
+                        currentSearch = $(this).val().toLowerCase();
+                        $('#beamraymar-search, #beamraymar-search-bottom').val($(this).val());
+                        filterData();
+                        currentPage = 1;
+                        renderTable();
+                        updatePaginationInfo();
+                    });
+                    
+                    // Clear search buttons
+                    $(document).on('click', '.beamraymar-clear-btn', function(e) {
+                        e.preventDefault();
+                        $('.beamraymar-search-input').val('');
+                        currentSearch = '';
+                        filterData();
+                        currentPage = 1;
+                        renderTable();
+                        updatePaginationInfo();
+                    });
+                    
+                    // Create buttons
+                    $('#create-post-inline').on('click', function() {
+                        openCreateModal('post');
+                    });
+                    
+                    $('#create-page-inline').on('click', function() {
+                        openCreateModal('page');
+                    });
+                    
+                    $('#create-popup').on('click', function() {
+                        openCreateModal('post');
+                    });
+                    
+                    // Modal handlers
+                    $('#beamraymar-modal-close, #beamraymar-modal-cancel').on('click', function() {
+                        closeCreateModal();
+                    });
+                    
+                    $(document).on('click', function(e) {
+                        if ($(e.target).hasClass('beamraymar-modal')) {
+                            closeCreateModal();
+                        }
+                    });
+                    
+                    // Form submission
+                    $('#beamraymar-modal-form').on('submit', function(e) {
+                        e.preventDefault();
+                        submitForm();
+                    });
+                    
+                    // Content editor buttons
+                    $(document).on('click', '.beamraymar-content-edit-btn', function() {
+                        const postId = $(this).data('post-id');
+                        openContentEditor(postId);
+                    });
+                    
+                    // Content editor modal handlers
+                    $('#beamraymar-content-editor-cancel').on('click', function() {
+                        closeContentEditor();
+                    });
+                    
+                    $('#beamraymar-content-editor-save').on('click', function() {
+                        saveContentEdit();
+                    });
+                    
+                    // Elementor buttons
+                    $(document).on('click', '.beamraymar-elementor-btn:not(.disabled)', function() {
+                        const postId = $(this).data('post-id');
+                        openElementorEditor(postId);
+                    });
+                    
+                    // Elementor editor modal handlers
+                    $('#beamraymar-elementor-editor-cancel').on('click', function() {
+                        closeElementorEditor();
+                    });
+                    
+                    $('#beamraymar-elementor-editor-save').on('click', function() {
+                        saveElementorEdit();
+                    });
+                    
+                    // Inline cell editing
+                    $(document).on('click', '.beamraymar-editable-cell', function() {
+                        if (editingCell) return;
+                        startInlineEdit(this);
+                    });
+                    
+                    // Checkbox selection
+                    $('#select-all').on('change', function() {
+                        const isChecked = $(this).is(':checked');
+                        $('.beamraymar-checkbox').not('#select-all').prop('checked', isChecked);
+                        updateSelectedRows();
+                    });
+                    
+                    $(document).on('change', '.beamraymar-checkbox:not(#select-all)', function() {
+                        updateSelectedRows();
+                    });
+                }
+                
+                function filterData() {
+                    if (!currentSearch) {
+                        filteredData = [...allData];
+                        return;
+                    }
+                    
+                    filteredData = allData.filter(item => {
+                        return Object.values(item).some(value => 
+                            String(value).toLowerCase().includes(currentSearch)
+                        );
+                    });
+                }
+                
+                function renderTable() {
+                    // Table already rendered server-side, just update info display
+                    const start = (currentPage - 1) * itemsPerPage + 1;
+                    const end = Math.min(currentPage * itemsPerPage, filteredData.length);
+                    
+                    $('#beamraymar-results-info, #beamraymar-results-info-bottom')
+                        .text(`${start}-${end} of ${filteredData.length} posts/pages`);
+                }
+                
+                function updatePaginationInfo() {
+                    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+                    
+                    // Update pagination display
+                    $('.beamraymar-pagination-btn[data-page]').removeClass('active');
+                    $(`.beamraymar-pagination-btn[data-page="${currentPage}"]`).addClass('active');
+                }
+                
+                function openCreateModal(postType = 'post') {
+                    $('#modal-post-type').val(postType);
+                    $('#beamraymar-modal-title').text(`Create New ${postType.charAt(0).toUpperCase() + postType.slice(1)}`);
+                    $('#beamraymar-modal').addClass('active');
+                }
+                
+                function closeCreateModal() {
+                    $('#beamraymar-modal').removeClass('active');
+                    $('#beamraymar-modal-form')[0].reset();
+                }
+                
+                function submitForm() {
+                    const formData = new FormData($('#beamraymar-modal-form')[0]);
+                    formData.append('action', 'lumora_beamray_create_new_post');
+                    
+                    $.ajax({
+                        url: ajaxurl,
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                            if (response.success) {
+                                closeCreateModal();
+                                location.reload(); // Refresh to show new post
+                            } else {
+                                alert('Error: ' + response.data);
+                            }
+                        },
+                        error: function() {
+                            alert('AJAX request failed');
+                        }
+                    });
+                }
+                
+                function openContentEditor(postId) {
+                    currentContentEditPostId = postId;
+                    const post = allData.find(p => p.ID == postId);
+                    if (post) {
+                        $('#beamraymar-content-editor-textarea').val(post.post_content || '');
+                        $('#beamraymar-content-editor-modal').addClass('active');
+                    }
+                }
+                
+                function closeContentEditor() {
+                    $('#beamraymar-content-editor-modal').removeClass('active');
+                    currentContentEditPostId = null;
+                }
+                
+                function saveContentEdit() {
+                    if (!currentContentEditPostId) return;
+                    
+                    const content = $('#beamraymar-content-editor-textarea').val();
+                    
+                    $.ajax({
+                        url: ajaxurl,
+                        type: 'POST',
+                        data: {
+                            action: 'lumora_beamray_update_post_field',
+                            post_id: currentContentEditPostId,
+                            field: 'post_content',
+                            value: content,
+                            nonce: $('[name="nonce"]').val()
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                closeContentEditor();
+                                location.reload();
+                            } else {
+                                alert('Error: ' + response.data);
+                            }
+                        },
+                        error: function() {
+                            alert('AJAX request failed');
+                        }
+                    });
+                }
+                
+                function openElementorEditor(postId) {
+                    currentElementorEditPostId = postId;
+                    const post = allData.find(p => p.ID == postId);
+                    if (post) {
+                        $('#beamraymar-elementor-editor-textarea').val(post._elementor_data || '');
+                        $('#beamraymar-elementor-editor-modal').addClass('active');
+                    }
+                }
+                
+                function closeElementorEditor() {
+                    $('#beamraymar-elementor-editor-modal').removeClass('active');
+                    currentElementorEditPostId = null;
+                }
+                
+                function saveElementorEdit() {
+                    if (!currentElementorEditPostId) return;
+                    
+                    const elementorData = $('#beamraymar-elementor-editor-textarea').val();
+                    
+                    $.ajax({
+                        url: ajaxurl,
+                        type: 'POST',
+                        data: {
+                            action: 'lumora_beamray_update_meta_field',
+                            post_id: currentElementorEditPostId,
+                            meta_key: '_elementor_data',
+                            meta_value: elementorData,
+                            nonce: $('[name="nonce"]').val()
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                closeElementorEditor();
+                                location.reload();
+                            } else {
+                                alert('Error: ' + response.data);
+                            }
+                        },
+                        error: function() {
+                            alert('AJAX request failed');
+                        }
+                    });
+                }
+                
+                function startInlineEdit(cell) {
+                    const $cell = $(cell);
+                    const field = $cell.data('field');
+                    const type = $cell.data('type');
+                    const currentValue = $cell.find('.tcell_inner_wrapper_div').text();
+                    
+                    if (type === 'longtext') {
+                        const $textarea = $('<textarea class="beamraymar-editing-textarea"></textarea>');
+                        $textarea.val(currentValue);
+                        $cell.find('.tcell_inner_wrapper_div').html($textarea);
+                        $textarea.focus();
+                        editingCell = { cell: $cell, field: field, original: currentValue };
+                        
+                        $textarea.on('blur keydown', function(e) {
+                            if (e.type === 'blur' || (e.type === 'keydown' && e.key === 'Escape')) {
+                                finishInlineEdit(false);
+                            } else if (e.type === 'keydown' && e.ctrlKey && e.key === 'Enter') {
+                                finishInlineEdit(true);
+                            }
+                        });
+                    } else {
+                        const $input = $('<input type="text" class="beamraymar-editing-input">');
+                        $input.val(currentValue);
+                        $cell.find('.tcell_inner_wrapper_div').html($input);
+                        $input.focus().select();
+                        editingCell = { cell: $cell, field: field, original: currentValue };
+                        
+                        $input.on('blur keydown', function(e) {
+                            if (e.type === 'blur' || (e.type === 'keydown' && e.key === 'Escape')) {
+                                finishInlineEdit(false);
+                            } else if (e.type === 'keydown' && e.key === 'Enter') {
+                                finishInlineEdit(true);
+                            }
+                        });
+                    }
+                }
+                
+                function finishInlineEdit(save) {
+                    if (!editingCell) return;
+                    
+                    const $cell = editingCell.cell;
+                    const field = editingCell.field;
+                    const original = editingCell.original;
+                    const $input = $cell.find('input, textarea');
+                    const newValue = $input.val();
+                    
+                    if (save && newValue !== original) {
+                        const postId = $cell.closest('tr').data('post-id');
+                        
+                        $.ajax({
+                            url: ajaxurl,
+                            type: 'POST',
+                            data: {
+                                action: 'lumora_beamray_update_post_field',
+                                post_id: postId,
+                                field: field,
+                                value: newValue,
+                                nonce: $('[name="nonce"]').val()
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    $cell.find('.tcell_inner_wrapper_div').text(newValue);
+                                } else {
+                                    $cell.find('.tcell_inner_wrapper_div').text(original);
+                                    alert('Error: ' + response.data);
+                                }
+                            },
+                            error: function() {
+                                $cell.find('.tcell_inner_wrapper_div').text(original);
+                                alert('AJAX request failed');
+                            }
+                        });
+                    } else {
+                        $cell.find('.tcell_inner_wrapper_div').text(original);
+                    }
+                    
+                    editingCell = null;
+                }
+                
+                function updateSelectedRows() {
+                    selectedRows.clear();
+                    $('.beamraymar-checkbox:checked').not('#select-all').each(function() {
+                        selectedRows.add($(this).val());
+                    });
+                }
+                
+            })(jQuery);
+        </script>
+        
+    </div>
+    <?php
+}
+
+<?php

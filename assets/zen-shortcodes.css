@@ -1,0 +1,214 @@
+/* 
+/**
+ * Lumora Zen Shortcodes CSS
+ * Styles for zen_services, zen_locations, and sitespren shortcodes
+ */
+
+/* Services Shortcode Styles */
+.zen-services-wrapper {
+    margin: 20px 0;
+}
+
+.zen-services-wrapper.zen-template-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.zen-services-wrapper.zen-template-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.zen-service-item {
+    margin-bottom: 20px;
+}
+
+.zen-service-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.zen-service-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.zen-service-name {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.zen-service-placard {
+    font-style: italic;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.zen-service-moniker {
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 8px;
+}
+
+.zen-service-description-short {
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.zen-service-description-long {
+    color: #555;
+    line-height: 1.6;
+    margin-top: 15px;
+}
+
+.zen-service-image-wrapper {
+    margin-bottom: 15px;
+}
+
+.zen-service-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+
+/* Locations Shortcode Styles */
+.zen-locations-wrapper {
+    margin: 20px 0;
+}
+
+.zen-locations-wrapper.zen-template-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.zen-locations-wrapper.zen-template-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.zen-location-item {
+    margin-bottom: 20px;
+}
+
+.zen-location-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.zen-location-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.zen-location-name {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.zen-location-placard {
+    font-style: italic;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.zen-location-moniker {
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 8px;
+}
+
+.zen-location-address {
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.zen-location-image-wrapper {
+    margin-bottom: 15px;
+}
+
+.zen-location-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+
+/* Pinned Badges */
+.zen-pinned-badge {
+    display: inline-block;
+    background: #f0c14b;
+    color: #333;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+/* Sitespren Shortcode Styles */
+.sitespren-error {
+    color: #d63638;
+    background: #fcf0f1;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+.sitespren-not-found {
+    color: #996;
+    font-style: italic;
+}
+
+.sitespren-no-field {
+    color: #996;
+    font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .zen-services-wrapper.zen-template-grid,
+    .zen-locations-wrapper.zen-template-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .zen-services-wrapper.zen-template-cards,
+    .zen-locations-wrapper.zen-template-cards {
+        flex-direction: column;
+    }
+    
+    .zen-service-card,
+    .zen-location-card {
+        margin: 0 0 20px 0;
+    }
+}
+
+/* Content spacing improvements */
+.zen-service-content,
+.zen-location-content {
+    line-height: 1.6;
+}
+
+.zen-service-content > *:first-child,
+.zen-location-content > *:first-child {
+    margin-top: 0;
+}
+
+.zen-service-content > *:last-child,
+.zen-location-content > *:last-child {
+    margin-bottom: 0;
+}

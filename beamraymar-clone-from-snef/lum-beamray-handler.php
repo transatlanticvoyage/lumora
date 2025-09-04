@@ -2442,5 +2442,3 @@ function lumora_render_beamray_table_rows($posts_pages) {
     </div>
     <?php
 }
-
-<?php

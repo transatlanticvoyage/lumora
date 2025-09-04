@@ -1628,24 +1628,42 @@ function lumora_handle_beamray_ajax() {
 function lumora_get_posts_and_pages_data() {
     global $wpdb;
     
+    // Force table creation first (debug)
+    $lumora_db = new Lumora_Database();
+    $lumora_db->create_zen_tables();
+    
+    // Start with a very simple query to test basic functionality
     $results = $wpdb->get_results(
         "SELECT p.ID, p.post_title, p.post_content, p.post_type, p.post_status, p.post_name, 
                 p.post_date, p.post_modified, p.post_author, p.post_parent, p.menu_order,
-                p.comment_status, p.ping_status, pm._elementor_data,
-                op.rel_wp_post_id, op.orbitpost_id, op.redshift_datum, op.rover_datum,
-                op.hudson_imgplanbatch_id, op.is_pinned, op.is_flagged, op.is_starred, op.is_squared,
-                op.created_at, op.updated_at
+                p.comment_status, p.ping_status
          FROM {$wpdb->prefix}posts p
-         LEFT JOIN (
-             SELECT post_id, meta_value as _elementor_data
-             FROM {$wpdb->prefix}postmeta
-             WHERE meta_key = '_elementor_data'
-         ) pm ON p.ID = pm.post_id
-         LEFT JOIN {$wpdb->prefix}zen_orbitposts op ON p.ID = op.rel_wp_post_id
          WHERE p.post_type IN ('post', 'page')
          ORDER BY p.post_modified DESC",
         ARRAY_A
     );
+    
+    // Add debugging info
+    error_log('Lumora BeamRay: Retrieved ' . count($results) . ' posts/pages from basic query');
+    if ($wpdb->last_error) {
+        error_log('Lumora BeamRay SQL Error: ' . $wpdb->last_error);
+    }
+    
+    // Add the missing fields with NULL values for now
+    foreach ($results as &$result) {
+        $result['_elementor_data'] = null;
+        $result['rel_wp_post_id'] = null;
+        $result['orbitpost_id'] = null;
+        $result['redshift_datum'] = null;
+        $result['rover_datum'] = null;
+        $result['hudson_imgplanbatch_id'] = null;
+        $result['is_pinned'] = null;
+        $result['is_flagged'] = null;
+        $result['is_starred'] = null;
+        $result['is_squared'] = null;
+        $result['created_at'] = null;
+        $result['updated_at'] = null;
+    }
     
     return $results ?: array();
 }

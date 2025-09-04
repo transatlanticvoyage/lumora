@@ -8,7 +8,7 @@
  */
 class Lumora_Database {
     
-    const ZEN_DB_VERSION = '1.3';
+    const ZEN_DB_VERSION = '1.4';
     
     public function __construct() {
         // Check and create tables on initialization
@@ -58,6 +58,9 @@ class Lumora_Database {
         
         // Create zen_locations table
         $this->create_locations_table($charset_collate);
+        
+        // Create zen_orbitposts table (needed for BeamRay functionality)
+        $this->create_orbitposts_table($charset_collate);
     }
     
     /**
@@ -224,6 +227,37 @@ class Lumora_Database {
             INDEX idx_is_pinned (is_pinned_location),
             INDEX idx_position (position_in_custom_order),
             INDEX idx_city_state (city, state_code)
+        ) $charset_collate;";
+        
+        dbDelta($sql);
+    }
+    
+    /**
+     * Create zen_orbitposts table (needed for BeamRay functionality)
+     */
+    private function create_orbitposts_table($charset_collate) {
+        global $wpdb;
+        
+        $table_name = $wpdb->prefix . 'zen_orbitposts';
+        
+        $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+            orbitpost_id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            rel_wp_post_id BIGINT(20) UNSIGNED,
+            redshift_datum TEXT,
+            rover_datum JSON,
+            hudson_imgplanbatch_id VARCHAR(36),
+            is_pinned BOOLEAN DEFAULT FALSE,
+            is_flagged BOOLEAN DEFAULT FALSE,
+            is_starred BOOLEAN DEFAULT FALSE,
+            is_squared BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (orbitpost_id),
+            KEY rel_wp_post_id (rel_wp_post_id),
+            KEY hudson_imgplanbatch_id (hudson_imgplanbatch_id),
+            KEY idx_is_pinned (is_pinned),
+            KEY idx_is_flagged (is_flagged),
+            KEY idx_is_starred (is_starred)
         ) $charset_collate;";
         
         dbDelta($sql);

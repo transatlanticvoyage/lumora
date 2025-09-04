@@ -600,6 +600,91 @@ function lumora_beamray_page() {
                 border-color: navy !important;
             }
             
+            /* Rocket Chamber Styles */
+            .rocket-chamber {
+                background: linear-gradient(135deg, #1e3c72, #2a5298);
+                border: 2px solid #4a5568;
+                border-radius: 8px;
+                margin: 0 0 0 0;
+                padding: 0;
+                position: relative;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            }
+            
+            .rocket-chamber-header {
+                background: linear-gradient(90deg, #2d3748, #4a5568);
+                padding: 8px 15px;
+                border-top-left-radius: 6px;
+                border-top-right-radius: 6px;
+                border-bottom: 1px solid #718096;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .rocket-icon {
+                font-size: 16px;
+                color: #ffd700;
+            }
+            
+            .rocket-label {
+                font-size: 13px;
+                font-weight: bold;
+                color: #e2e8f0;
+                text-transform: lowercase;
+            }
+            
+            .rocket-chamber-content {
+                padding: 15px;
+                background: white;
+                border-bottom-left-radius: 6px;
+                border-bottom-right-radius: 6px;
+            }
+            
+            .rocket-control-table {
+                width: 100%;
+                border-collapse: collapse;
+                background: white;
+            }
+            
+            .rocket-control-table td {
+                padding: 8px 12px;
+                border: 1px solid #e2e8f0;
+                vertical-align: top;
+                font-size: 12px;
+            }
+            
+            .rocket-control-table .control-label {
+                background: #f7fafc;
+                font-weight: bold;
+                color: #4a5568;
+                width: 120px;
+                text-align: right;
+            }
+            
+            .rocket-control-table .control-content {
+                background: white;
+            }
+            
+            /* Wolf exclusion and template buttons */
+            .beamraymar-wolf-btn,
+            .beamraymar-template-btn {
+                padding: 4px 8px;
+                font-size: 12px;
+                border: 1px solid #d1d5db;
+                background: #f9fafb;
+                color: #374151;
+                cursor: pointer;
+                border-radius: 4px;
+                transition: background-color 0.2s;
+            }
+            
+            .beamraymar-wolf-btn:hover,
+            .beamraymar-template-btn:hover {
+                background: #f3f4f6;
+                border-color: #9ca3af;
+            }
+            
             .beamraymar-filter-btn:first-child {
                 border-top-left-radius: 4px;
                 border-bottom-left-radius: 4px;
@@ -833,32 +918,6 @@ function lumora_beamray_page() {
                     <span id="beamraymar-results-info">1-<?php echo min(100, count($posts_pages)); ?> of <?php echo count($posts_pages); ?> posts/pages</span>
                 </div>
                 
-                <div class="beamraymar-pagination-controls">
-                    <div class="beamraymar-pagination-bar" id="beamraymar-per-page-bar">
-                        <a href="#" class="beamraymar-pagination-btn" data-per-page="10">10</a>
-                        <a href="#" class="beamraymar-pagination-btn" data-per-page="20">20</a>
-                        <a href="#" class="beamraymar-pagination-btn" data-per-page="50">50</a>
-                        <a href="#" class="beamraymar-pagination-btn active" data-per-page="100">100</a>
-                        <a href="#" class="beamraymar-pagination-btn" data-per-page="200">200</a>
-                        <a href="#" class="beamraymar-pagination-btn" data-per-page="500">500</a>
-                        <a href="#" class="beamraymar-pagination-btn" data-per-page="all">All</a>
-                    </div>
-                    
-                    <div class="beamraymar-pagination-divider"></div>
-                    
-                    <div class="beamraymar-pagination-bar" id="beamraymar-page-bar">
-                        <a href="#" class="beamraymar-pagination-btn" data-page="first">First</a>
-                        <a href="#" class="beamraymar-pagination-btn" data-page="prev">Prev</a>
-                        <a href="#" class="beamraymar-pagination-btn active" data-page="1">1</a>
-                        <a href="#" class="beamraymar-pagination-btn" data-page="next">Next</a>
-                        <a href="#" class="beamraymar-pagination-btn" data-page="last">Last</a>
-                    </div>
-                </div>
-                
-                <div class="beamraymar-search-container">
-                    <input type="text" id="beamraymar-search" class="beamraymar-search-input" placeholder="Search all fields...">
-                    <button class="beamraymar-clear-btn" id="beamraymar-clear">CL</button>
-                </div>
             </div>
             
             <div class="beamraymar-controls-right">
@@ -879,28 +938,6 @@ function lumora_beamray_page() {
                 </div>
                 <div class="beamraymar-nubra-kite">nubra-tableface-kite</div>
                 
-                <!-- Column Pagination Controls -->
-                <div class="beamraymar-column-pagination-controls">
-                    <div class="beamraymar-column-pagination-bar" id="beamraymar-column-group-bar">
-                        <a href="#" class="beamraymar-column-pagination-btn active" data-column-group="1">Columns 1-7</a>
-                        <a href="#" class="beamraymar-column-pagination-btn" data-column-group="2">Columns 8-14</a>
-                        <a href="#" class="beamraymar-column-pagination-btn" data-column-group="3">Columns 15-21</a>
-                        <a href="#" class="beamraymar-column-pagination-btn" data-column-group="4">Columns 22-28</a>
-                        <a href="#" class="beamraymar-column-pagination-btn" data-column-group="5">Columns 29-35</a>
-                    </div>
-                    
-                    <div class="beamraymar-column-pagination-bar" id="beamraymar-column-nav-bar">
-                        <a href="#" class="beamraymar-column-pagination-btn" data-column-nav="first">First</a>
-                        <a href="#" class="beamraymar-column-pagination-btn" data-column-nav="prev">Prev</a>
-                        <a href="#" class="beamraymar-column-pagination-btn active" data-column-nav="1">1</a>
-                        <a href="#" class="beamraymar-column-pagination-btn" data-column-nav="2">2</a>
-                        <a href="#" class="beamraymar-column-pagination-btn" data-column-nav="3">3</a>
-                        <a href="#" class="beamraymar-column-pagination-btn" data-column-nav="4">4</a>
-                        <a href="#" class="beamraymar-column-pagination-btn" data-column-nav="5">5</a>
-                        <a href="#" class="beamraymar-column-pagination-btn" data-column-nav="next">Next</a>
-                        <a href="#" class="beamraymar-column-pagination-btn" data-column-nav="last">Last</a>
-                    </div>
-                </div>
                 
                 <!-- Filter Controls -->
                 <div class="beamraymar-filter-controls">
@@ -916,6 +953,105 @@ function lumora_beamray_page() {
                         <a href="<?php echo admin_url('admin.php?page=lum_beamray_mar&post_status=draft'); ?>" class="beamraymar-filter-btn <?php echo ($current_status === 'draft') ? 'active' : ''; ?>" data-filter-type="post_status" data-filter-value="draft">Draft</a>
                     </div>
                 </div>
+            </div>
+        </div>
+        
+        <!-- Rocket Chamber -->
+        <div class="rocket-chamber">
+            <div class="rocket-chamber-header">
+                <span class="rocket-icon">🚀</span>
+                <span class="rocket-label">rocket_chamber</span>
+            </div>
+            <div class="rocket-chamber-content">
+                <table class="rocket-control-table">
+                    <tr>
+                        <td class="control-label">row pagination</td>
+                        <td class="control-content">
+                            <!-- Move top row pagination controls here -->
+                            <div class="beamraymar-pagination-controls">
+                                <div class="beamraymar-pagination-bar" id="beamraymar-per-page-bar">
+                                    <a href="#" class="beamraymar-pagination-btn" data-per-page="10">10</a>
+                                    <a href="#" class="beamraymar-pagination-btn" data-per-page="20">20</a>
+                                    <a href="#" class="beamraymar-pagination-btn" data-per-page="50">50</a>
+                                    <a href="#" class="beamraymar-pagination-btn active" data-per-page="100">100</a>
+                                    <a href="#" class="beamraymar-pagination-btn" data-per-page="200">200</a>
+                                    <a href="#" class="beamraymar-pagination-btn" data-per-page="500">500</a>
+                                    <a href="#" class="beamraymar-pagination-btn" data-per-page="all">All</a>
+                                </div>
+                                
+                                <div class="beamraymar-pagination-divider"></div>
+                                
+                                <div class="beamraymar-pagination-bar" id="beamraymar-page-bar">
+                                    <a href="#" class="beamraymar-pagination-btn" data-page="first">First</a>
+                                    <a href="#" class="beamraymar-pagination-btn" data-page="prev">Prev</a>
+                                    <a href="#" class="beamraymar-pagination-btn active" data-page="1">1</a>
+                                    <a href="#" class="beamraymar-pagination-btn" data-page="next">Next</a>
+                                    <a href="#" class="beamraymar-pagination-btn" data-page="last">Last</a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="control-label">search box</td>
+                        <td class="control-content">
+                            <!-- Move search box here -->
+                            <div class="beamraymar-search-container">
+                                <input type="text" id="beamraymar-search" class="beamraymar-search-input" placeholder="Search all fields...">
+                                <button class="beamraymar-clear-btn" id="beamraymar-clear">CL</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="control-label">wolf exclusion band</td>
+                        <td class="control-content">
+                            <!-- Add wolf exclusion band buttons -->
+                            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                <button class="beamraymar-wolf-btn" data-wolf-action="enable">Enable Wolf Exclusion</button>
+                                <button class="beamraymar-wolf-btn" data-wolf-action="disable">Disable Wolf Exclusion</button>
+                                <button class="beamraymar-wolf-btn" data-wolf-action="status">Check Wolf Status</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="control-label">column templates</td>
+                        <td class="control-content">
+                            <!-- Add column template buttons -->
+                            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                <button class="beamraymar-template-btn" data-template="default">Default Template</button>
+                                <button class="beamraymar-template-btn" data-template="compact">Compact View</button>
+                                <button class="beamraymar-template-btn" data-template="detailed">Detailed View</button>
+                                <button class="beamraymar-template-btn" data-template="custom">Custom Template</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="control-label">column pagination</td>
+                        <td class="control-content">
+                            <!-- Move column pagination controls here -->
+                            <div class="beamraymar-column-pagination-controls">
+                                <div class="beamraymar-column-pagination-bar" id="beamraymar-column-group-bar">
+                                    <a href="#" class="beamraymar-column-pagination-btn active" data-column-group="1">Columns 1-7</a>
+                                    <a href="#" class="beamraymar-column-pagination-btn" data-column-group="2">Columns 8-14</a>
+                                    <a href="#" class="beamraymar-column-pagination-btn" data-column-group="3">Columns 15-21</a>
+                                    <a href="#" class="beamraymar-column-pagination-btn" data-column-group="4">Columns 22-28</a>
+                                    <a href="#" class="beamraymar-column-pagination-btn" data-column-group="5">Columns 29-35</a>
+                                </div>
+                                
+                                <div class="beamraymar-column-pagination-bar" id="beamraymar-column-nav-bar">
+                                    <a href="#" class="beamraymar-column-pagination-btn" data-column-nav="first">First</a>
+                                    <a href="#" class="beamraymar-column-pagination-btn" data-column-nav="prev">Prev</a>
+                                    <a href="#" class="beamraymar-column-pagination-btn active" data-column-nav="1">1</a>
+                                    <a href="#" class="beamraymar-column-pagination-btn" data-column-nav="2">2</a>
+                                    <a href="#" class="beamraymar-column-pagination-btn" data-column-nav="3">3</a>
+                                    <a href="#" class="beamraymar-column-pagination-btn" data-column-nav="4">4</a>
+                                    <a href="#" class="beamraymar-column-pagination-btn" data-column-nav="5">5</a>
+                                    <a href="#" class="beamraymar-column-pagination-btn" data-column-nav="next">Next</a>
+                                    <a href="#" class="beamraymar-column-pagination-btn" data-column-nav="last">Last</a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
             </div>
         </div>
         

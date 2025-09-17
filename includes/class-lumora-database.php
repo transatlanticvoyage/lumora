@@ -8,7 +8,7 @@
  */
 class Lumora_Database {
     
-    const ZEN_DB_VERSION = '1.6';
+    const ZEN_DB_VERSION = '1.7';
     
     public function __construct() {
         // Check and create tables on initialization

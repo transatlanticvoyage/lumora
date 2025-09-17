@@ -64,6 +64,9 @@ class Lumora_Database {
         
         // Create zen_lighthouse_friendly_names table
         $this->create_lighthouse_friendly_names_table($charset_collate);
+        
+        // Create zen_general_shortcodes table
+        $this->create_general_shortcodes_table($charset_collate);
     }
     
     /**
@@ -284,6 +287,44 @@ class Lumora_Database {
             updated_at timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (fname_id),
             INDEX idx_table_column (db_table_name(100), db_column_name(100))
+        ) $charset_collate;";
+        
+        dbDelta($sql);
+    }
+    
+    /**
+     * Create zen_general_shortcodes table for user-defined shortcodes
+     */
+    private function create_general_shortcodes_table($charset_collate) {
+        global $wpdb;
+        
+        $table_name = $wpdb->prefix . 'zen_general_shortcodes';
+        
+        $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+            shortcode_id int(11) NOT NULL AUTO_INCREMENT,
+            shortcode_name text NOT NULL,
+            shortcode_slug text NOT NULL,
+            shortcode_content longtext NOT NULL,
+            shortcode_description text DEFAULT NULL,
+            shortcode_category text DEFAULT NULL,
+            shortcode_type text DEFAULT 'custom',
+            shortcode_usage_example text DEFAULT NULL,
+            is_active tinyint(1) DEFAULT 1,
+            is_system tinyint(1) DEFAULT 0,
+            is_global tinyint(1) DEFAULT 0,
+            position_order int(11) DEFAULT 0,
+            author_user_id bigint(20) DEFAULT NULL,
+            created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+            updated_at timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (shortcode_id),
+            INDEX idx_shortcode_slug (shortcode_slug(100)),
+            INDEX idx_active (is_active),
+            INDEX idx_system (is_system),
+            INDEX idx_global (is_global),
+            INDEX idx_category (shortcode_category(100)),
+            INDEX idx_type (shortcode_type(50)),
+            INDEX idx_position (position_order),
+            INDEX idx_author (author_user_id)
         ) $charset_collate;";
         
         dbDelta($sql);
@@ -634,8 +675,8 @@ class Lumora_Database {
             $column_name
         ));
         
-        // Return friendly name if found, otherwise return formatted column name
-        return $friendly_name ? $friendly_name : ucwords(str_replace('_', ' ', $column_name));
+        // Return friendly name if found, otherwise return blank
+        return $friendly_name ? $friendly_name : '';
     }
     
     /**
@@ -700,5 +741,152 @@ class Lumora_Database {
                 array('%s', '%s', '%s')
             );
         }
+    }
+    
+    /**
+     * Get general shortcodes
+     */
+    public static function get_general_shortcodes($args = array()) {
+        global $wpdb;
+        
+        $defaults = array(
+            'orderby' => 'position_order',
+            'order' => 'ASC',
+            'type' => '',
+            'category' => '',
+            'active_only' => false,
+            'system_only' => false,
+            'limit' => -1,
+            'offset' => 0
+        );
+        
+        $args = wp_parse_args($args, $defaults);
+        $table_name = $wpdb->prefix . 'zen_general_shortcodes';
+        
+        $sql = "SELECT * FROM $table_name WHERE 1=1";
+        
+        // Add filters
+        if (!empty($args['type'])) {
+            $sql .= $wpdb->prepare(" AND shortcode_type = %s", $args['type']);
+        }
+        
+        if (!empty($args['category'])) {
+            $sql .= $wpdb->prepare(" AND shortcode_category = %s", $args['category']);
+        }
+        
+        if ($args['active_only']) {
+            $sql .= " AND is_active = 1";
+        }
+        
+        if ($args['system_only']) {
+            $sql .= " AND is_system = 1";
+        }
+        
+        // Add ORDER BY clause
+        $sql .= " ORDER BY " . esc_sql($args['orderby']) . " " . esc_sql($args['order']);
+        
+        // Add LIMIT and OFFSET if specified
+        if ($args['limit'] > 0) {
+            $sql .= " LIMIT " . intval($args['limit']);
+            if ($args['offset'] > 0) {
+                $sql .= " OFFSET " . intval($args['offset']);
+            }
+        }
+        
+        return $wpdb->get_results($sql);
+    }
+    
+    /**
+     * Get single general shortcode by ID
+     */
+    public static function get_general_shortcode($shortcode_id) {
+        global $wpdb;
+        
+        $table_name = $wpdb->prefix . 'zen_general_shortcodes';
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table_name WHERE shortcode_id = %d",
+            $shortcode_id
+        ));
+    }
+    
+    /**
+     * Get general shortcode by slug
+     */
+    public static function get_general_shortcode_by_slug($shortcode_slug) {
+        global $wpdb;
+        
+        $table_name = $wpdb->prefix . 'zen_general_shortcodes';
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table_name WHERE shortcode_slug = %s",
+            $shortcode_slug
+        ));
+    }
+    
+    /**
+     * Insert general shortcode
+     */
+    public static function insert_general_shortcode($data) {
+        global $wpdb;
+        
+        $table_name = $wpdb->prefix . 'zen_general_shortcodes';
+        return $wpdb->insert($table_name, $data);
+    }
+    
+    /**
+     * Update general shortcode
+     */
+    public static function update_general_shortcode($shortcode_id, $data) {
+        global $wpdb;
+        
+        $table_name = $wpdb->prefix . 'zen_general_shortcodes';
+        return $wpdb->update($table_name, $data, array('shortcode_id' => $shortcode_id));
+    }
+    
+    /**
+     * Delete general shortcode
+     */
+    public static function delete_general_shortcode($shortcode_id) {
+        global $wpdb;
+        
+        $table_name = $wpdb->prefix . 'zen_general_shortcodes';
+        return $wpdb->delete($table_name, array('shortcode_id' => $shortcode_id));
+    }
+    
+    /**
+     * Get general shortcodes count
+     */
+    public static function get_general_shortcodes_count($args = array()) {
+        global $wpdb;
+        
+        $defaults = array(
+            'type' => '',
+            'category' => '',
+            'active_only' => false,
+            'system_only' => false
+        );
+        
+        $args = wp_parse_args($args, $defaults);
+        $table_name = $wpdb->prefix . 'zen_general_shortcodes';
+        
+        $sql = "SELECT COUNT(*) FROM $table_name WHERE 1=1";
+        
+        // Add filters
+        if (!empty($args['type'])) {
+            $sql .= $wpdb->prepare(" AND shortcode_type = %s", $args['type']);
+        }
+        
+        if (!empty($args['category'])) {
+            $sql .= $wpdb->prepare(" AND shortcode_category = %s", $args['category']);
+        }
+        
+        if ($args['active_only']) {
+            $sql .= " AND is_active = 1";
+        }
+        
+        if ($args['system_only']) {
+            $sql .= " AND is_system = 1";
+        }
+        
+        return $wpdb->get_var($sql);
     }
 }

@@ -1,5 +1,6 @@
 <?php
 // TEST COMMENT - Verifying dual git tracking for Lumora
+// Test comment 9: Lumora dual visibility test - 2025-09-19 16:48
 /**
  * Plugin Name: Lumora
  * Plugin URI: https://github.com/transatlanticvoyage/lumora

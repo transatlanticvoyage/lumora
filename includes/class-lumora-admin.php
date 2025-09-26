@@ -49,7 +49,7 @@ class Lumora_Admin {
             'lumorahub',
             array($this, 'lumorahub_page'),
             'dashicons-lightbulb',
-            31
+            3.5
         );
         
         // Child menu pages (mirroring Grove structure)

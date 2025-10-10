@@ -32,6 +32,7 @@ class Lumora_Admin {
         
         // Test handler for debugging
         add_action('wp_ajax_lumora_test_rename', array($this, 'lumora_test_rename'));
+        add_action('wp_ajax_lumora_test_description', array($this, 'lumora_test_description'));
         
         // Handle file redirects
         add_action('init', array($this, 'lumora_handle_file_redirects'));
@@ -1804,11 +1805,22 @@ class Lumora_Admin {
                 }
             });
             
-            // Close popup on overlay click
-            $('#lumora-rename-popup-overlay').on('click', function(e) {
+            // Close popup on overlay click - but only if click started and ended on overlay
+            let clickStartedOnOverlay = false;
+            
+            $('#lumora-rename-popup-overlay').on('mousedown', function(e) {
                 if (e.target === this) {
+                    clickStartedOnOverlay = true;
+                } else {
+                    clickStartedOnOverlay = false;
+                }
+            });
+            
+            $('#lumora-rename-popup-overlay').on('click', function(e) {
+                if (e.target === this && clickStartedOnOverlay) {
                     lumoraCloseRenamePopup();
                 }
+                clickStartedOnOverlay = false;
             });
             
             // Handle auto-populate functionality
@@ -1922,15 +1934,25 @@ class Lumora_Admin {
             let createRedirect = jQuery('#lumora-create-redirect').is(':checked');
             
             // Get attachment metadata
-            let attachmentTitle = jQuery('#lumora-attachment-title').val().trim();
-            let attachmentAlt = jQuery('#lumora-attachment-alt').val().trim();
-            let attachmentCaption = jQuery('#lumora-attachment-caption').val().trim();
-            let attachmentDescription = jQuery('#lumora-attachment-description').val().trim();
+            let attachmentTitle = jQuery('#lumora-attachment-title').val();
+            let attachmentAlt = jQuery('#lumora-attachment-alt').val();
+            let attachmentCaption = jQuery('#lumora-attachment-caption').val();
+            let attachmentDescription = jQuery('#lumora-attachment-description').val();
+            
+            // Trim after getting values to preserve intentional spaces
+            if (attachmentTitle) attachmentTitle = attachmentTitle.trim();
+            if (attachmentAlt) attachmentAlt = attachmentAlt.trim();
+            if (attachmentCaption) attachmentCaption = attachmentCaption.trim();
+            if (attachmentDescription) attachmentDescription = attachmentDescription.trim();
             
             console.log('Lumora: About to send AJAX request');
             console.log('Lumora: Attachment ID:', currentAttachmentId);
             console.log('Lumora: Update references:', updateReferences);
             console.log('Lumora: Create redirect:', createRedirect);
+            console.log('Lumora: Title:', attachmentTitle);
+            console.log('Lumora: Alt:', attachmentAlt);
+            console.log('Lumora: Caption:', attachmentCaption);
+            console.log('Lumora: Description:', attachmentDescription);
             
             // Execute rename via AJAX with increased timeout
             jQuery.ajax({
@@ -2071,6 +2093,12 @@ class Lumora_Admin {
         $attachment_caption = isset($_POST['attachment_caption']) ? sanitize_textarea_field($_POST['attachment_caption']) : '';
         $attachment_description = isset($_POST['attachment_description']) ? sanitize_textarea_field($_POST['attachment_description']) : '';
         
+        // Debug logging
+        error_log('Lumora: Received attachment_title: ' . $attachment_title);
+        error_log('Lumora: Received attachment_alt: ' . $attachment_alt);
+        error_log('Lumora: Received attachment_caption: ' . $attachment_caption);
+        error_log('Lumora: Received attachment_description: ' . $attachment_description);
+        
         if (!$attachment_id) {
             wp_send_json_error('Invalid attachment ID');
             return;
@@ -2140,18 +2168,25 @@ class Lumora_Admin {
         // Update caption and description if provided
         if (!empty($attachment_caption)) {
             $post_data['post_excerpt'] = $attachment_caption;
+            error_log('Lumora: Adding caption to post_data: ' . $attachment_caption);
         }
         if (!empty($attachment_description)) {
             $post_data['post_content'] = $attachment_description;
+            error_log('Lumora: Adding description to post_data: ' . $attachment_description);
         }
         
         // Update post if we have data to update
         if (count($post_data) > 1) {
-            wp_update_post($post_data);
+            error_log('Lumora: Updating post with data: ' . print_r($post_data, true));
+            $result = wp_update_post($post_data);
+            error_log('Lumora: wp_update_post result: ' . $result);
+        } else {
+            error_log('Lumora: No post data to update');
         }
         
         // Update alt text
         if (!empty($attachment_alt)) {
+            error_log('Lumora: Updating alt text: ' . $attachment_alt);
             update_post_meta($attachment_id, '_wp_attachment_image_alt', $attachment_alt);
         }
         
@@ -2442,5 +2477,44 @@ class Lumora_Admin {
         // Just return success without doing anything
         error_log('Lumora: Test rename completed successfully');
         wp_send_json_success('Test rename completed - no actual file changes made');
+    }
+    
+    /**
+     * Test description saving
+     */
+    public function lumora_test_description() {
+        error_log('Lumora: Test description function called');
+        
+        check_ajax_referer('lumora_rename_nonce', 'nonce');
+        
+        if (!current_user_can('upload_files')) {
+            wp_send_json_error('Insufficient permissions');
+            return;
+        }
+        
+        $attachment_id = intval($_POST['attachment_id']);
+        $description = isset($_POST['attachment_description']) ? sanitize_textarea_field($_POST['attachment_description']) : '';
+        
+        error_log('Lumora: Test - attachment_id: ' . $attachment_id);
+        error_log('Lumora: Test - description: ' . $description);
+        
+        if (!$attachment_id) {
+            wp_send_json_error('Invalid attachment ID');
+            return;
+        }
+        
+        // Try to update just the description
+        $result = wp_update_post(array(
+            'ID' => $attachment_id,
+            'post_content' => $description
+        ));
+        
+        error_log('Lumora: Test wp_update_post result: ' . $result);
+        
+        if ($result && !is_wp_error($result)) {
+            wp_send_json_success('Description updated successfully');
+        } else {
+            wp_send_json_error('Failed to update description');
+        }
     }
 }

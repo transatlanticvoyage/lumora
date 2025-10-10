@@ -84,6 +84,7 @@ echo 'Nonce verify: ' . (wp_verify_nonce($nonce, 'lumora_rename_nonce') ? '✅ V
 echo '<h2>7. AJAX Test</h2>';
 $nonce = wp_create_nonce('lumora_rename_nonce');
 echo '<button id="test-ajax" data-nonce="' . $nonce . '">Test AJAX Connection</button>';
+echo '<button id="test-description" data-nonce="' . $nonce . '" style="margin-left: 10px;">Test Description Save</button>';
 echo '<div id="ajax-result" style="margin-top: 10px; padding: 10px; border: 1px solid #ccc; display: none;"></div>';
 
 echo '<script src="' . includes_url('js/jquery/jquery.js') . '"></script>';
@@ -108,6 +109,29 @@ jQuery(document).ready(function($) {
             },
             error: function(xhr, status, error) {
                 $("#ajax-result").html("❌ AJAX Error: " + status + " - " + error);
+            }
+        });
+    });
+    
+    $("#test-description").click(function() {
+        var nonce = $(this).data("nonce");
+        
+        $("#ajax-result").show().html("Testing description save...");
+        
+        $.ajax({
+            url: "' . admin_url('admin-ajax.php') . '",
+            type: "POST",
+            data: {
+                action: "lumora_test_description",
+                nonce: nonce,
+                attachment_id: 1209,
+                attachment_description: "Test description content"
+            },
+            success: function(response) {
+                $("#ajax-result").html("✅ Description Test Success: " + JSON.stringify(response));
+            },
+            error: function(xhr, status, error) {
+                $("#ajax-result").html("❌ Description Test Error: " + status + " - " + error);
             }
         });
     });

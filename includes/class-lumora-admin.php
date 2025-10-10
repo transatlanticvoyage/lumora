@@ -19,6 +19,22 @@ class Lumora_Admin {
         add_action('wp_ajax_lumora_beamray_create_new_post', array($this, 'lumora_beamray_create_new_post'));
         add_action('wp_ajax_lumora_beamray_update_post_field', array($this, 'lumora_beamray_update_post_field'));
         add_action('wp_ajax_lumora_beamray_update_meta_field', array($this, 'lumora_beamray_update_meta_field'));
+        
+        // Media Library Column hooks
+        add_filter('manage_media_columns', array($this, 'add_lumora_media_column'));
+        add_action('manage_media_custom_column', array($this, 'lumora_media_column_content'), 10, 2);
+        add_action('admin_head-upload.php', array($this, 'lumora_media_column_styles'));
+        add_action('admin_footer-upload.php', array($this, 'lumora_media_rename_popup_script'));
+        
+        // Media Rename AJAX handlers
+        add_action('wp_ajax_lumora_get_attachment_details', array($this, 'lumora_get_attachment_details'));
+        add_action('wp_ajax_lumora_rename_media_file', array($this, 'lumora_rename_media_file'));
+        
+        // Test handler for debugging
+        add_action('wp_ajax_lumora_test_rename', array($this, 'lumora_test_rename'));
+        
+        // Handle file redirects
+        add_action('init', array($this, 'lumora_handle_file_redirects'));
     }
     
     /**
@@ -1454,5 +1470,977 @@ class Lumora_Admin {
         } else {
             wp_send_json_error('Failed to update meta field');
         }
+    }
+    
+    /**
+     * Add Lumora Features column to media library
+     */
+    public function add_lumora_media_column($columns) {
+        $columns['lumora_features'] = '<strong>Lumora Features</strong>';
+        return $columns;
+    }
+    
+    /**
+     * Display content for Lumora Features column in media library
+     */
+    public function lumora_media_column_content($column_name, $attachment_id) {
+        if ($column_name === 'lumora_features') {
+            echo '<button type="button" class="button button-secondary lumora-rename-file-btn" data-attachment-id="' . esc_attr($attachment_id) . '">Rename File</button>';
+        }
+    }
+    
+    /**
+     * Add CSS styles for Lumora media column and rename popup
+     */
+    public function lumora_media_column_styles() {
+        ?>
+        <style type="text/css">
+        .column-lumora_features {
+            width: 120px;
+        }
+        
+        .lumora-rename-file-btn {
+            font-size: 12px;
+            padding: 4px 8px;
+            height: auto;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+        
+        .lumora-rename-file-btn:hover {
+            background-color: #f0f0f0;
+            border-color: #999;
+        }
+        
+        /* Rename Popup Styles */
+        .lumora-rename-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 100000;
+            display: none;
+        }
+        
+        .lumora-rename-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow: auto;
+            z-index: 100001;
+        }
+        
+        .lumora-rename-popup-header {
+            padding: 20px 20px 10px;
+            border-bottom: 1px solid #ddd;
+            position: relative;
+        }
+        
+        .lumora-rename-popup-header h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .lumora-rename-popup-close {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #666;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        .lumora-rename-popup-close:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .lumora-rename-popup-body {
+            padding: 20px;
+        }
+        
+        .lumora-rename-current-image {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .lumora-rename-current-image img {
+            max-width: 200px;
+            max-height: 150px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .lumora-rename-field-group {
+            margin-bottom: 15px;
+        }
+        
+        .lumora-rename-field-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .lumora-rename-field-group input[type="text"] {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .lumora-rename-field-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .lumora-rename-current-name {
+            background: #f9f9f9;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #666;
+        }
+        
+        .lumora-rename-popup-footer {
+            padding: 15px 20px 20px;
+            text-align: right;
+        }
+        
+        .lumora-rename-execute-btn {
+            background: #0073aa;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        
+        .lumora-rename-execute-btn:hover {
+            background: #005a87;
+        }
+        
+        .lumora-rename-execute-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .lumora-rename-cancel-btn {
+            background: #f1f1f1;
+            color: #333;
+            border: 1px solid #ccc;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .lumora-rename-cancel-btn:hover {
+            background: #e0e0e0;
+        }
+        
+        .lumora-rename-loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .lumora-rename-error {
+            background: #ffebe8;
+            border: 1px solid #ff6b6b;
+            color: #c92a2a;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        
+        .lumora-rename-success {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        </style>
+        <?php
+    }
+    
+    /**
+     * Add JavaScript for rename popup functionality
+     */
+    public function lumora_media_rename_popup_script() {
+        ?>
+        <div id="lumora-rename-popup-overlay" class="lumora-rename-popup-overlay">
+            <div class="lumora-rename-popup">
+                <div class="lumora-rename-popup-header">
+                    <h3>Rename Media File</h3>
+                    <button type="button" class="lumora-rename-popup-close" onclick="lumoraCloseRenamePopup()">&times;</button>
+                </div>
+                <div class="lumora-rename-popup-body">
+                    <div class="lumora-rename-current-image">
+                        <img id="lumora-rename-preview-image" src="" alt="Preview">
+                    </div>
+                    
+                    <div class="lumora-rename-field-group">
+                        <label for="lumora-current-filename">Current Filename:</label>
+                        <div id="lumora-current-filename" class="lumora-rename-current-name"></div>
+                    </div>
+                    
+                    <div class="lumora-rename-field-group">
+                        <label for="lumora-new-filename">New Filename (without extension):</label>
+                        <input type="text" id="lumora-new-filename" placeholder="Enter new filename">
+                    </div>
+                    
+                    <div class="lumora-rename-field-group">
+                        <label>
+                            <input type="checkbox" id="lumora-update-references" checked> 
+                            Update all references in posts, pages, and Elementor (recommended)
+                        </label>
+                        <small style="color: #666; display: block; margin-top: 4px;">
+                            For testing: uncheck this if rename hangs, then try again
+                        </small>
+                    </div>
+                    
+                    <div class="lumora-rename-field-group">
+                        <label>
+                            <input type="checkbox" id="lumora-create-redirect" checked> 
+                            Create redirect from old URL to new URL
+                        </label>
+                    </div>
+                    
+                    <div class="lumora-rename-field-group">
+                        <label>
+                            <input type="checkbox" id="lumora-auto-populate-meta"> 
+                            Update title and alt text to new file name
+                        </label>
+                    </div>
+                    
+                    <div id="lumora-rename-message"></div>
+                </div>
+                <div class="lumora-rename-popup-footer">
+                    <button type="button" class="lumora-rename-cancel-btn" onclick="lumoraCloseRenamePopup()">Cancel</button>
+                    <button type="button" class="lumora-rename-execute-btn" onclick="lumoraExecuteRename()">Save</button>
+                </div>
+                
+                <!-- Additional Meta Fields Section -->
+                <div class="lumora-rename-popup-body" style="border-top: 1px solid #ddd; margin-top: 0;">
+                    <h4 style="margin-top: 0; margin-bottom: 15px; color: #333;">Image Details</h4>
+                    
+                    <div class="lumora-rename-field-group">
+                        <label for="lumora-attachment-title">Title:</label>
+                        <input type="text" id="lumora-attachment-title" placeholder="Enter image title">
+                    </div>
+                    
+                    <div class="lumora-rename-field-group">
+                        <label for="lumora-attachment-alt">Alt Text:</label>
+                        <input type="text" id="lumora-attachment-alt" placeholder="Enter alt text for accessibility">
+                    </div>
+                    
+                    <div class="lumora-rename-field-group">
+                        <label for="lumora-attachment-caption">Caption:</label>
+                        <textarea id="lumora-attachment-caption" placeholder="Enter image caption" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="lumora-rename-field-group">
+                        <label for="lumora-attachment-description">Description:</label>
+                        <textarea id="lumora-attachment-description" placeholder="Enter image description" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+        // Add console logging for debugging
+        console.log('Lumora: JavaScript loaded');
+        
+        // Declare variables in global scope
+        let currentAttachmentId = null;
+        let currentFilename = '';
+        let currentExtension = '';
+        
+        jQuery(document).ready(function($) {
+            console.log('Lumora: jQuery ready');
+            
+            // Handle rename button clicks
+            $(document).on('click', '.lumora-rename-file-btn', function() {
+                console.log('Lumora: Rename button clicked');
+                currentAttachmentId = $(this).data('attachment-id');
+                console.log('Lumora: Attachment ID:', currentAttachmentId);
+                lumoraOpenRenamePopup(currentAttachmentId);
+            });
+            
+            // Handle Enter key in filename input
+            $('#lumora-new-filename').on('keypress', function(e) {
+                if (e.which === 13) { // Enter key
+                    lumoraExecuteRename();
+                }
+            });
+            
+            // Close popup on overlay click
+            $('#lumora-rename-popup-overlay').on('click', function(e) {
+                if (e.target === this) {
+                    lumoraCloseRenamePopup();
+                }
+            });
+            
+            // Handle auto-populate functionality
+            $('#lumora-auto-populate-meta').on('change', function() {
+                if ($(this).is(':checked')) {
+                    lumoraAutoPopulateFields();
+                }
+            });
+            
+            // Auto-populate when filename changes if checkbox is checked
+            $('#lumora-new-filename').on('input', function() {
+                if ($('#lumora-auto-populate-meta').is(':checked')) {
+                    lumoraAutoPopulateFields();
+                }
+            });
+        });
+        
+        function lumoraOpenRenamePopup(attachmentId) {
+            console.log('Lumora: Opening popup for attachment ID:', attachmentId);
+            // Get attachment details via AJAX
+            jQuery.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'lumora_get_attachment_details',
+                    nonce: '<?php echo wp_create_nonce('lumora_rename_nonce'); ?>',
+                    attachment_id: attachmentId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        let data = response.data;
+                        currentFilename = data.filename;
+                        currentExtension = data.extension;
+                        
+                        // Populate popup
+                        jQuery('#lumora-rename-preview-image').attr('src', data.url);
+                        jQuery('#lumora-current-filename').text(data.full_filename);
+                        jQuery('#lumora-new-filename').val(data.filename);
+                        jQuery('#lumora-rename-message').empty();
+                        
+                        // Populate attachment meta fields
+                        jQuery('#lumora-attachment-title').val(data.title || '');
+                        jQuery('#lumora-attachment-alt').val(data.alt_text || '');
+                        jQuery('#lumora-attachment-caption').val(data.caption || '');
+                        jQuery('#lumora-attachment-description').val(data.description || '');
+                        
+                        // Show popup
+                        jQuery('#lumora-rename-popup-overlay').fadeIn(200);
+                        
+                        // Focus input and select text
+                        setTimeout(function() {
+                            jQuery('#lumora-new-filename').focus().select();
+                        }, 250);
+                    } else {
+                        alert('Error loading attachment details: ' + response.data);
+                    }
+                },
+                error: function() {
+                    alert('Error loading attachment details');
+                }
+            });
+        }
+        
+        function lumoraCloseRenamePopup() {
+            jQuery('#lumora-rename-popup-overlay').fadeOut(200);
+            currentAttachmentId = null;
+            currentFilename = '';
+            currentExtension = '';
+        }
+        
+        function lumoraAutoPopulateFields() {
+            let newFilename = jQuery('#lumora-new-filename').val().trim();
+            if (newFilename) {
+                // Remove hyphens and underscores, then capitalize words
+                let cleanName = newFilename.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                
+                jQuery('#lumora-attachment-title').val(cleanName);
+                jQuery('#lumora-attachment-alt').val(cleanName);
+            }
+        }
+        
+        function lumoraExecuteRename() {
+            console.log('Lumora: Execute save called');
+            let newFilename = jQuery('#lumora-new-filename').val().trim();
+            console.log('Lumora: New filename:', newFilename);
+            
+            // Validate filename if provided and different from current
+            let shouldRename = false;
+            if (newFilename && newFilename !== currentFilename) {
+                // Validate filename
+                if (!/^[a-zA-Z0-9._-]+$/.test(newFilename)) {
+                    lumoraShowMessage('Filename can only contain letters, numbers, dots, hyphens, and underscores', 'error');
+                    return;
+                }
+                shouldRename = true;
+            } else if (newFilename === currentFilename) {
+                // Same filename, just update metadata
+                newFilename = '';
+                shouldRename = false;
+            } else if (!newFilename) {
+                // No filename provided, just update metadata
+                shouldRename = false;
+            }
+            
+            // Disable button and show loading
+            jQuery('.lumora-rename-execute-btn').prop('disabled', true).text('Saving...');
+            lumoraShowMessage('Saving changes, please wait...', 'loading');
+            
+            // Get options
+            let updateReferences = jQuery('#lumora-update-references').is(':checked');
+            let createRedirect = jQuery('#lumora-create-redirect').is(':checked');
+            
+            // Get attachment metadata
+            let attachmentTitle = jQuery('#lumora-attachment-title').val().trim();
+            let attachmentAlt = jQuery('#lumora-attachment-alt').val().trim();
+            let attachmentCaption = jQuery('#lumora-attachment-caption').val().trim();
+            let attachmentDescription = jQuery('#lumora-attachment-description').val().trim();
+            
+            console.log('Lumora: About to send AJAX request');
+            console.log('Lumora: Attachment ID:', currentAttachmentId);
+            console.log('Lumora: Update references:', updateReferences);
+            console.log('Lumora: Create redirect:', createRedirect);
+            
+            // Execute rename via AJAX with increased timeout
+            jQuery.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                timeout: 60000, // 60 seconds timeout
+                data: {
+                    action: 'lumora_rename_media_file',
+                    nonce: '<?php echo wp_create_nonce('lumora_rename_nonce'); ?>',
+                    attachment_id: currentAttachmentId,
+                    new_filename: newFilename,
+                    update_references: updateReferences,
+                    create_redirect: createRedirect,
+                    attachment_title: attachmentTitle,
+                    attachment_alt: attachmentAlt,
+                    attachment_caption: attachmentCaption,
+                    attachment_description: attachmentDescription
+                },
+                beforeSend: function() {
+                    console.log('Lumora: AJAX request starting...');
+                },
+                success: function(response) {
+                    console.log('Lumora: AJAX success response:', response);
+                    if (response.success) {
+                        lumoraShowMessage('Changes saved successfully!', 'success');
+                        
+                        // Refresh the media library page after a short delay
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        lumoraShowMessage('Error: ' + response.data, 'error');
+                        jQuery('.lumora-rename-execute-btn').prop('disabled', false).text('Save');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log('Lumora: AJAX error - Status:', status, 'Error:', error);
+                    console.log('Lumora: XHR response:', xhr.responseText);
+                    if (status === 'timeout') {
+                        lumoraShowMessage('Operation timed out. File may have been renamed - please refresh the page to check.', 'error');
+                    } else {
+                        lumoraShowMessage('Network error occurred: ' + error, 'error');
+                    }
+                    jQuery('.lumora-rename-execute-btn').prop('disabled', false).text('Save');
+                }
+            });
+        }
+        
+        function lumoraShowMessage(message, type) {
+            let messageDiv = jQuery('#lumora-rename-message');
+            messageDiv.removeClass('lumora-rename-error lumora-rename-success lumora-rename-loading');
+            
+            if (type === 'error') {
+                messageDiv.addClass('lumora-rename-error');
+            } else if (type === 'success') {
+                messageDiv.addClass('lumora-rename-success');
+            } else if (type === 'loading') {
+                messageDiv.addClass('lumora-rename-loading');
+            }
+            
+            messageDiv.text(message);
+        }
+        </script>
+        <?php
+    }
+    
+    /**
+     * AJAX: Get attachment details for rename popup
+     */
+    public function lumora_get_attachment_details() {
+        check_ajax_referer('lumora_rename_nonce', 'nonce');
+        
+        if (!current_user_can('upload_files')) {
+            wp_send_json_error('Insufficient permissions');
+            return;
+        }
+        
+        $attachment_id = intval($_POST['attachment_id']);
+        
+        if (!$attachment_id) {
+            wp_send_json_error('Invalid attachment ID');
+            return;
+        }
+        
+        $attachment = get_post($attachment_id);
+        if (!$attachment || $attachment->post_type !== 'attachment') {
+            wp_send_json_error('Attachment not found');
+            return;
+        }
+        
+        $file_path = get_attached_file($attachment_id);
+        if (!$file_path || !file_exists($file_path)) {
+            wp_send_json_error('File not found on server');
+            return;
+        }
+        
+        $url = wp_get_attachment_url($attachment_id);
+        $filename_parts = pathinfo($file_path);
+        
+        // Get attachment metadata
+        $alt_text = get_post_meta($attachment_id, '_wp_attachment_image_alt', true);
+        
+        wp_send_json_success(array(
+            'url' => $url,
+            'full_filename' => $filename_parts['basename'],
+            'filename' => $filename_parts['filename'],
+            'extension' => $filename_parts['extension'],
+            'file_path' => $file_path,
+            'title' => $attachment->post_title,
+            'alt_text' => $alt_text,
+            'caption' => $attachment->post_excerpt,
+            'description' => $attachment->post_content
+        ));
+    }
+    
+    /**
+     * AJAX: Rename media file
+     */
+    public function lumora_rename_media_file() {
+        // Add debugging
+        error_log('Lumora: Starting rename operation');
+        
+        check_ajax_referer('lumora_rename_nonce', 'nonce');
+        
+        if (!current_user_can('upload_files')) {
+            wp_send_json_error('Insufficient permissions');
+            return;
+        }
+        
+        $attachment_id = intval($_POST['attachment_id']);
+        $new_filename = sanitize_file_name($_POST['new_filename']);
+        $update_references = isset($_POST['update_references']) && $_POST['update_references'] === 'true';
+        $create_redirect = isset($_POST['create_redirect']) && $_POST['create_redirect'] === 'true';
+        
+        // Get attachment metadata
+        $attachment_title = isset($_POST['attachment_title']) ? sanitize_text_field($_POST['attachment_title']) : '';
+        $attachment_alt = isset($_POST['attachment_alt']) ? sanitize_text_field($_POST['attachment_alt']) : '';
+        $attachment_caption = isset($_POST['attachment_caption']) ? sanitize_textarea_field($_POST['attachment_caption']) : '';
+        $attachment_description = isset($_POST['attachment_description']) ? sanitize_textarea_field($_POST['attachment_description']) : '';
+        
+        if (!$attachment_id) {
+            wp_send_json_error('Invalid attachment ID');
+            return;
+        }
+        
+        // New filename is optional - if empty, we just update metadata
+        $should_rename = !empty($new_filename);
+        
+        $attachment = get_post($attachment_id);
+        if (!$attachment || $attachment->post_type !== 'attachment') {
+            wp_send_json_error('Attachment not found');
+            return;
+        }
+        
+        $file_info = null;
+        $old_file_path = null;
+        $new_file_path = null;
+        
+        // Only do file operations if we're actually renaming
+        if ($should_rename) {
+            $old_file_path = get_attached_file($attachment_id);
+            if (!$old_file_path || !file_exists($old_file_path)) {
+                wp_send_json_error('Original file not found on server');
+                return;
+            }
+            
+            $file_info = pathinfo($old_file_path);
+            $new_filename_with_ext = $new_filename . '.' . $file_info['extension'];
+            $new_file_path = $file_info['dirname'] . '/' . $new_filename_with_ext;
+            
+            // Check if new file already exists
+            if (file_exists($new_file_path)) {
+                wp_send_json_error('A file with that name already exists');
+                return;
+            }
+            
+            // Attempt to rename the file
+            error_log('Lumora: Attempting to rename file from ' . $old_file_path . ' to ' . $new_file_path);
+            if (!rename($old_file_path, $new_file_path)) {
+                error_log('Lumora: File rename failed');
+                wp_send_json_error('Failed to rename file on server');
+                return;
+            }
+            
+            error_log('Lumora: File renamed successfully, updating metadata');
+            // Update attachment metadata
+            update_attached_file($attachment_id, $new_file_path);
+        } else {
+            error_log('Lumora: Skipping file rename, updating metadata only');
+            // Get file info for later use even if not renaming
+            $old_file_path = get_attached_file($attachment_id);
+            if ($old_file_path) {
+                $file_info = pathinfo($old_file_path);
+            }
+        }
+        
+        // Update attachment post data and metadata
+        $post_data = array('ID' => $attachment_id);
+        
+        // Only update filename-related title if no custom title provided, or if it matches old filename
+        if (!empty($attachment_title)) {
+            $post_data['post_title'] = $attachment_title;
+        } else if ($attachment->post_title === $file_info['filename']) {
+            $post_data['post_title'] = $new_filename;
+        }
+        
+        // Update caption and description if provided
+        if (!empty($attachment_caption)) {
+            $post_data['post_excerpt'] = $attachment_caption;
+        }
+        if (!empty($attachment_description)) {
+            $post_data['post_content'] = $attachment_description;
+        }
+        
+        // Update post if we have data to update
+        if (count($post_data) > 1) {
+            wp_update_post($post_data);
+        }
+        
+        // Update alt text
+        if (!empty($attachment_alt)) {
+            update_post_meta($attachment_id, '_wp_attachment_image_alt', $attachment_alt);
+        }
+        
+        // Update attachment metadata
+        $metadata = wp_get_attachment_metadata($attachment_id);
+        if ($metadata && isset($metadata['file'])) {
+            $upload_dir = wp_upload_dir();
+            $relative_path = str_replace($upload_dir['basedir'] . '/', '', $new_file_path);
+            $metadata['file'] = $relative_path;
+            
+            // Update image sizes paths if they exist
+            if (isset($metadata['sizes']) && is_array($metadata['sizes'])) {
+                foreach ($metadata['sizes'] as $size => &$size_data) {
+                    if (isset($size_data['file'])) {
+                        $old_size_filename = str_replace($file_info['filename'], $new_filename, $size_data['file']);
+                        $old_size_path = $file_info['dirname'] . '/' . $size_data['file'];
+                        $new_size_path = $file_info['dirname'] . '/' . $old_size_filename;
+                        
+                        // Rename size files if they exist
+                        if (file_exists($old_size_path)) {
+                            rename($old_size_path, $new_size_path);
+                            $size_data['file'] = $old_size_filename;
+                        }
+                    }
+                }
+            }
+            
+            wp_update_attachment_metadata($attachment_id, $metadata);
+        }
+        
+        // Handle URL replacements if requested and file was renamed (with error handling)
+        if ($should_rename && $update_references && $file_info) {
+            error_log('Lumora: Starting URL replacements');
+            try {
+                $this->lumora_update_image_references($attachment_id, $file_info, $new_filename);
+                error_log('Lumora: URL replacements completed');
+            } catch (Exception $e) {
+                error_log('Lumora URL replacement error: ' . $e->getMessage());
+                // Continue anyway - the file was renamed successfully
+            }
+        }
+        
+        // Handle redirect creation if requested and file was renamed (with error handling)
+        if ($should_rename && $create_redirect && $file_info) {
+            error_log('Lumora: Creating redirects');
+            try {
+                $this->lumora_create_url_redirect($attachment_id, $file_info, $new_filename);
+                error_log('Lumora: Redirects created');
+            } catch (Exception $e) {
+                error_log('Lumora redirect creation error: ' . $e->getMessage());
+                // Continue anyway - the file was renamed successfully
+            }
+        }
+        
+        error_log('Lumora: Save operation completed successfully');
+        wp_send_json_success('Changes saved successfully');
+    }
+    
+    /**
+     * Update image references in posts, pages, and Elementor data (optimized)
+     */
+    private function lumora_update_image_references($attachment_id, $file_info, $new_filename) {
+        global $wpdb;
+        
+        // Increase time limit for this operation
+        set_time_limit(300); // 5 minutes
+        
+        $upload_dir = wp_upload_dir();
+        
+        // Generate old URL based on file info
+        $old_relative_path = str_replace($upload_dir['basedir'] . '/', '', $file_info['dirname'] . '/' . $file_info['basename']);
+        $old_url_from_path = $upload_dir['baseurl'] . '/' . $old_relative_path;
+        
+        // Generate new URL
+        $new_relative_path = str_replace($upload_dir['basedir'] . '/', '', $file_info['dirname'] . '/' . $new_filename . '.' . $file_info['extension']);
+        $new_url = $upload_dir['baseurl'] . '/' . $new_relative_path;
+        
+        // Only proceed if we actually found content to replace
+        $check_posts = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_content LIKE %s",
+            '%' . $wpdb->esc_like($old_url_from_path) . '%'
+        ));
+        
+        if ($check_posts > 0) {
+            // Update in post content
+            $wpdb->query($wpdb->prepare(
+                "UPDATE {$wpdb->posts} SET post_content = REPLACE(post_content, %s, %s) WHERE post_content LIKE %s",
+                $old_url_from_path,
+                $new_url,
+                '%' . $wpdb->esc_like($old_url_from_path) . '%'
+            ));
+        }
+        
+        // Check postmeta before updating
+        $check_meta = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_value LIKE %s",
+            '%' . $wpdb->esc_like($old_url_from_path) . '%'
+        ));
+        
+        if ($check_meta > 0) {
+            // Update simple string replacements in postmeta first
+            $wpdb->query($wpdb->prepare(
+                "UPDATE {$wpdb->postmeta} SET meta_value = REPLACE(meta_value, %s, %s) 
+                 WHERE meta_value LIKE %s AND meta_value NOT LIKE 'a:%' AND meta_value NOT LIKE 'O:%'",
+                $old_url_from_path,
+                $new_url,
+                '%' . $wpdb->esc_like($old_url_from_path) . '%'
+            ));
+            
+            // Handle serialized data separately (limit to 50 rows to prevent timeout)
+            $results = $wpdb->get_results($wpdb->prepare(
+                "SELECT meta_id, meta_value FROM {$wpdb->postmeta} 
+                 WHERE meta_value LIKE %s AND (meta_value LIKE 'a:%' OR meta_value LIKE 'O:%')
+                 LIMIT 50",
+                '%' . $wpdb->esc_like($old_url_from_path) . '%'
+            ));
+            
+            foreach ($results as $row) {
+                $unserialized = maybe_unserialize($row->meta_value);
+                if ($unserialized !== $row->meta_value) {
+                    $updated = $this->lumora_recursive_replace($unserialized, $old_url_from_path, $new_url);
+                    $serialized = maybe_serialize($updated);
+                    
+                    if ($serialized !== $row->meta_value) {
+                        $wpdb->update(
+                            $wpdb->postmeta,
+                            array('meta_value' => $serialized),
+                            array('meta_id' => $row->meta_id),
+                            array('%s'),
+                            array('%d')
+                        );
+                    }
+                }
+            }
+        }
+        
+        // Handle image size variants (only if they exist)
+        $metadata = wp_get_attachment_metadata($attachment_id);
+        if ($metadata && isset($metadata['sizes']) && is_array($metadata['sizes'])) {
+            foreach ($metadata['sizes'] as $size => $size_data) {
+                if (isset($size_data['file'])) {
+                    $old_size_url = $upload_dir['baseurl'] . '/' . dirname($new_relative_path) . '/' . str_replace($new_filename, $file_info['filename'], $size_data['file']);
+                    $new_size_url = $upload_dir['baseurl'] . '/' . dirname($new_relative_path) . '/' . $size_data['file'];
+                    
+                    // Only update if content exists
+                    $has_content = $wpdb->get_var($wpdb->prepare(
+                        "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_content LIKE %s",
+                        '%' . $wpdb->esc_like($old_size_url) . '%'
+                    ));
+                    
+                    if ($has_content > 0) {
+                        $wpdb->query($wpdb->prepare(
+                            "UPDATE {$wpdb->posts} SET post_content = REPLACE(post_content, %s, %s) WHERE post_content LIKE %s",
+                            $old_size_url,
+                            $new_size_url,
+                            '%' . $wpdb->esc_like($old_size_url) . '%'
+                        ));
+                    }
+                    
+                    $has_meta = $wpdb->get_var($wpdb->prepare(
+                        "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_value LIKE %s",
+                        '%' . $wpdb->esc_like($old_size_url) . '%'
+                    ));
+                    
+                    if ($has_meta > 0) {
+                        $wpdb->query($wpdb->prepare(
+                            "UPDATE {$wpdb->postmeta} SET meta_value = REPLACE(meta_value, %s, %s) WHERE meta_value LIKE %s",
+                            $old_size_url,
+                            $new_size_url,
+                            '%' . $wpdb->esc_like($old_size_url) . '%'
+                        ));
+                    }
+                }
+            }
+        }
+        
+        // Clear any object cache
+        wp_cache_flush();
+    }
+    
+    /**
+     * Recursively replace URLs in arrays and objects
+     */
+    private function lumora_recursive_replace($data, $old_url, $new_url) {
+        if (is_string($data)) {
+            return str_replace($old_url, $new_url, $data);
+        } elseif (is_array($data)) {
+            foreach ($data as $key => $value) {
+                $data[$key] = $this->lumora_recursive_replace($value, $old_url, $new_url);
+            }
+        } elseif (is_object($data)) {
+            foreach ($data as $key => $value) {
+                $data->$key = $this->lumora_recursive_replace($value, $old_url, $new_url);
+            }
+        }
+        
+        return $data;
+    }
+    
+    /**
+     * Create URL redirect mapping for old filename to new filename
+     */
+    private function lumora_create_url_redirect($attachment_id, $file_info, $new_filename) {
+        $upload_dir = wp_upload_dir();
+        
+        // Get relative paths
+        $old_relative_path = str_replace($upload_dir['basedir'] . '/', '', $file_info['dirname'] . '/' . $file_info['basename']);
+        $new_relative_path = str_replace($upload_dir['basedir'] . '/', '', $file_info['dirname'] . '/' . $new_filename . '.' . $file_info['extension']);
+        
+        // Store redirect mapping in options table
+        $redirects = get_option('lumora_file_redirects', array());
+        $redirects[$old_relative_path] = $new_relative_path;
+        update_option('lumora_file_redirects', $redirects);
+        
+        // Handle image size variants
+        $metadata = wp_get_attachment_metadata($attachment_id);
+        if ($metadata && isset($metadata['sizes']) && is_array($metadata['sizes'])) {
+            foreach ($metadata['sizes'] as $size => $size_data) {
+                if (isset($size_data['file'])) {
+                    $old_size_relative = dirname($old_relative_path) . '/' . str_replace($new_filename, $file_info['filename'], $size_data['file']);
+                    $new_size_relative = dirname($new_relative_path) . '/' . $size_data['file'];
+                    $redirects[$old_size_relative] = $new_size_relative;
+                }
+            }
+            update_option('lumora_file_redirects', $redirects);
+        }
+    }
+    
+    /**
+     * Handle file redirects for renamed files
+     */
+    public function lumora_handle_file_redirects() {
+        // Don't handle redirects for admin AJAX requests
+        if (is_admin() || wp_doing_ajax()) {
+            return;
+        }
+        
+        if (!isset($_SERVER['REQUEST_URI'])) {
+            return;
+        }
+        
+        $request_uri = $_SERVER['REQUEST_URI'];
+        $upload_dir = wp_upload_dir();
+        $upload_path = parse_url($upload_dir['baseurl'], PHP_URL_PATH);
+        
+        // Check if this is a request for an uploaded file
+        if (strpos($request_uri, $upload_path) !== 0) {
+            return;
+        }
+        
+        // Get the relative path
+        $relative_path = substr($request_uri, strlen($upload_path) + 1);
+        
+        // Remove any query parameters
+        $relative_path = strtok($relative_path, '?');
+        
+        // Check if we have a redirect for this file
+        $redirects = get_option('lumora_file_redirects', array());
+        
+        if (isset($redirects[$relative_path])) {
+            $new_url = $upload_dir['baseurl'] . '/' . $redirects[$relative_path];
+            wp_redirect($new_url, 301);
+            exit;
+        }
+    }
+    
+    /**
+     * Simple test rename function for debugging
+     */
+    public function lumora_test_rename() {
+        error_log('Lumora: Test rename function called');
+        
+        check_ajax_referer('lumora_rename_nonce', 'nonce');
+        
+        if (!current_user_can('upload_files')) {
+            wp_send_json_error('Insufficient permissions');
+            return;
+        }
+        
+        $attachment_id = intval($_POST['attachment_id']);
+        $new_filename = sanitize_file_name($_POST['new_filename']);
+        
+        if (!$attachment_id || !$new_filename) {
+            wp_send_json_error('Invalid parameters');
+            return;
+        }
+        
+        // Just return success without doing anything
+        error_log('Lumora: Test rename completed successfully');
+        wp_send_json_success('Test rename completed - no actual file changes made');
     }
 }
